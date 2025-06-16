@@ -24,8 +24,10 @@ function obfuscateEmail($string)
     // Safeguard several stuff before parsing.
     $prevent = array(
         '|<input [^>]*@[^>]*>|is', // <input>
+        '|(<div wire(?:[^>]*)>)(.*?)(</div>)|is', // <div wire>
         '|(<textarea(?:[^>]*)>)(.*?)(</textarea>)|is', // <textarea>
         '|(<head(?:[^>]*)>)(.*?)(</head>)|is', // <head>
+        '|(<iframe(?:[^>]*)>)(.*?)(</iframe>)|is', // <iframe>
         '|(<script(?:[^>]*)>)(.*?)(</script>)|is', // <script>
     );
     foreach ($prevent as $pattern) {
@@ -41,13 +43,14 @@ function obfuscateEmail($string)
     );
 
     foreach ($patterns as $pattern) {
+
+
         $string = preg_replace_callback($pattern, function ($parts) use ($safeguard) {
             // Clean up element parts.
             $parts = array_map('trim', $parts);
 
             // ROT13 implementation for JS-enabled browsers
-            $js = '<script type="text/javascript">Rot13.write(' . "'" . str_rot13($parts[0]) . "'" . ');</script>';
-
+            $js = '<span class=\'obf\'>' . str_rot13($parts[0]) . '</span>';
             // Reversed direction implementation for non-JS browsers
             if (stripos($parts[0], '<a') === 0) {
                 // Mailto tag; if link content equals the email, just display the email,
@@ -58,7 +61,7 @@ function obfuscateEmail($string)
                 $nojs = $parts[0];
             }
             // phpcs:ignore Generic.Files.LineLength.TooLong
-            $nojs = '<noscript><span style="unicode-bidi:bidi-override;direction:rtl;">' . strrev($nojs) . '</span></noscript>';
+            $nojs = '<noscript><span style=\unicode-bidi:bidi-override;direction:rtl;\>' . strrev($nojs) . '</span></noscript>';
 
             // Safeguard the obfuscation so it won't get picked up by the next iteration.
             return str_replace('@', $safeguard, $js . $nojs);

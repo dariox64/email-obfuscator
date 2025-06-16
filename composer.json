@@ -1,5 +1,5 @@
 {
-  "name": "gremo/email-obfuscator",
+  "name": "dariox64/email-obfuscator",
   "description": "A text filter for automatic email obfuscation using  Javascript or CSS fallback",
   "keywords": [
     "laravel",
@@ -9,7 +9,7 @@
     "spam",
     "antispam"
   ],
-  "homepage": "http://github.com/gremo/email-obfuscator",
+  "homepage": "http://github.com/dariox64/email-obfuscator",
   "license": "MIT",
   "authors": [
     {

@@ -1,93 +1,101 @@
 # Email Obfuscator
 
-> I'm not the author of this package. The original package was `propaganistas/email-obfuscator` but the author decided to abandon and delete the GitHub repository, **breaking all sites** using it. I've just cloned and uploaded the latest version available.
-
-A text filter for automatic email obfuscation using the well-established JavaScript and a CSS fallback:
-
-- ROT13 ciphering for JavaScript-enabled browsers
-- CSS reversed text direction for non-JavaScript browsers
+Fork https://github.com/gremo/email-obfuscator
 
 ## Installation
 
 Install the bundle via Composer:
 
 ```bash
-composer require gremo/email-obfuscator
+add to composer
+
+{
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/dariox64/email-obfuscator.git"
+    }
+  ],
+  "require": {
+    "gremo/email-obfuscator": "dev-master"
+  }
+}
+
 ```
 
-Then include the supplied JavaScript file (`assets/email-obfuscator.min.js`) somewhere in your template. CND alternative (no uptime guaranteed):
+Then include the supplied JavaScript file (`assets/email-obfuscator.js`) somewhere in your template. CND alternative (no uptime guaranteed):
 
-```txt
-https://cdn.rawgit.com/gremo/email-obfuscator/master/assets/email-obfuscator.min.js
+
+```javascript/app.js
+
+import { Rot13 } from '../js/assets/email-obfuscator';
+window.Rot13 = Rot13.decode();
+
 ```
 
 ### Platform specific steps
+- [Work with Laravel 11 ](#laravel)
 
-- [Standalone](#standalone)
-- [Laravel 5](#laravel)
-- [Twig](#twig)
-
-#### Standalone
-
-Require the `src/Obfuscator.php` file somewhere in your project:
+create middleware
 
 ```php
-require_once 'PATH_TO_LIBRARY/src/Obfuscator.php';
-```
 
-Parse and obfuscate a string by using the `obfuscateEmail($string)` function.
+<?php
 
-#### Laravel 5
+namespace App\Http\Middleware;
 
-You have 3 options depending on your use case:
+use Closure;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Contracts\Support\Renderable;
+use Symfony\Component\HttpFoundation\Response;
 
-- If you want to obfuscate all email addresses that Laravel ever outputs, add the middleare class to the `$middleware` array in `App\Http\Middleware\Kernel.php`:
 
-```php
-protected $middleware = [
-    \Illuminate\Foundation\Http\Middleware\CheckForMaintenanceMode::class,
-    // ...
-    \Gremo\EmailObfuscator\Laravel\Middleware::class,
-];
-```
-
-This is the reccomended method.
-
-- If you only want to have specific controller methods return obfuscated email addresses, add the Middleware class to the `$routeMiddleware` array in `App\Http\Middleware\Kernel.php`:
-
-```php
-protected $routeMiddleware = [
-    'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
-    // ...
-    'obfuscate' => \Gremo\EmailObfuscator\Laravel\Middleware::class,
-];
-```
-
-... and apply controller middleware as usual in a controller's construct method or route definition:
-
-```php
-public function __construct()
+class ReplaceTagsMiddleware
 {
-    $this->middleware('obfuscate');
+    /**
+     * Handle an incoming request.
+     *
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     */
+    public function handle(Request $request, Closure $next): Response
+    {
+
+        // Sprawdzenie, czy request pochodzi z Livewire
+        if ($request->hasHeader('X-Livewire') || $request->header('Sec-Fetch-Dest') === 'image') {
+            // skip middleware Livewire
+            return $next($request);
+        }
+
+        $response = $next($request);
+
+        if ($response instanceof Response) {
+
+            $content = obfuscateEmail($response->getContent());
+            $response->setContent($content);
+        }
+
+        return $response;
+    }
 }
+
 ```
 
-- If you want to apply obfuscation only on specific strings, just use the `obfuscateEmail($string)` function.
-
-#### Twig
-
-Add the extension to the `Twig_Environment`:
+bootstrap/app.php [old kernel.php] ADD
 
 ```php
-$twig = new Twig_Environment(...);
-$twig->addExtension(new \Gremo\EmailObfuscator\Twig\Extension());
+    return Application::configure(basePath: dirname(__DIR__))
+        ->withMiddleware(function (Middleware $middleware) {
+            $middleware->web(append: [
+             \App\Http\Middleware\ReplaceTagsMiddleware::class,
+            ]);
 ```
 
-The extension exposes an `obfuscateEmail` Twig filter, which can be applied to any string.
 
-```twig
-{{ "Lorem Ipsum"|obfuscateEmail }}
-{{ variable|obfuscateEmail }}
+```bash
+
+composer update gremo/email-obfuscator
+composer install
 ```
 
 ## Credits

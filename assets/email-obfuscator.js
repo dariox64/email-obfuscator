@@ -1,33 +1,40 @@
-Rot13 = {
+export const Rot13 = {
   map: null,
-  init: function() {
-    if (Rot13.map != null) {
-        return;
+  init: function () {
+    if (this.map != null) {
+      return;
     }
 
-    var e = new Array;
-    var t = "abcdefghijklmnopqrstuvwxyz";
-    for (i = 0; i < t.length; i++) {
-        e[t.charAt(i)] = t.charAt((i + 13) % 26);
+    let e = {};
+    const t = "abcdefghijklmnopqrstuvwxyz";
+    // Inicjalizacja mapy dla małych liter
+    for (let i = 0; i < t.length; i++) {
+      e[t.charAt(i)] = t.charAt((i + 13) % 26);
     }
-    for (i = 0; i < t.length; i++) {
-        e[t.charAt(i).toUpperCase()] = t.charAt((i + 13) % 26).toUpperCase();
-    };
+    // Inicjalizacja mapy dla dużych liter
+    for (let i = 0; i < t.length; i++) {
+      e[t.charAt(i).toUpperCase()] = t.charAt((i + 13) % 26).toUpperCase();
+    }
 
-    Rot13.map = e;
+    this.map = e; // Zapisz mapę do obiektu
   },
-  convert: function(e) {
-    Rot13.init();
+  convert: function (str) {
+    this.init(); // Upewnij się, że mapa została zainicjalizowana
 
-    var t = "";
-    for (i = 0; i < e.length; i++) {
-      var n = e.charAt(i);
-      t += n >= "A" && n <= "Z" || n >= "a" && n <= "z" ? Rot13.map[n] : n;
+    let result = "";
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charAt(i);
+      // Sprawdź, czy znak jest literą i jest w mapie
+      result += this.map[char] || char;
     }
 
-    return t;
+    return result;
   },
-  write: function(e) {
-    document.write(Rot13.convert(e));
+  decode: function () {
+    let obf = document.querySelectorAll(".obf");
+    obf.forEach((single) => {
+      single.classList.remove("obf");
+      single.innerHTML = this.convert(single.innerHTML);
+    })
   }
-}
+};
